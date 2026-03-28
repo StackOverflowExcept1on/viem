@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { wagmiContractConfig } from '../../../test/src/abis.js'
-import { anvilMainnet } from '../../../test/src/anvil.js'
-import { accounts } from '../../../test/src/constants.js'
+import { wagmiContractConfig } from '~test/abis.js'
+import { anvilMainnet } from '~test/anvil.js'
+import { accounts } from '~test/constants.js'
 import { type Chain, mainnet } from '../../chains/index.js'
 import { type Client, createClient } from '../../clients/createClient.js'
+import { createWalletClient } from '../../clients/createWalletClient.js'
 import type { Transport } from '../../clients/transports/createTransport.js'
 import { custom } from '../../clients/transports/custom.js'
 import { RpcRequestError } from '../../errors/request.js'
@@ -452,7 +453,7 @@ describe('behavior: eth_sendTransaction fallback', () => {
     })
 
     expect(response.id).toMatchInlineSnapshot(
-      `"0xb0fd8d440a3cb766200a237ad236241a70660e6f13398c880ed913fce620e8e5386fc7a922e91f765fc5034631f96c76a801071d0285fec1c43f856eb4445566e7941d94f9057aca5978cbeda09c96f6772ca5762c257867382a4da0cdea36dd6c1959f1051e01bb652246da0bb803ba6e678864cd6382b40c0bfb1ae1c3202600000000000000000000000000000000000000000000000000000000000000015792579257925792579257925792579257925792579257925792579257925792"`,
+      `"0x0ecd932d89331e9b1101cca365408421aaaf204daae51c4d93176e96f9ba0479b64a97cbd685161d272cac3fad7e41a8f5100915ed518c4457e7e21aa7b5bf5654f0eb59d2b37daaa68d51c0d6c2f53a8dbf38cfe98a4d3cc0dabcc76184b5f34b6c692f3e621553067273926863cb1daadfef7bc70e9788dd9312500b2b946200000000000000000000000000000000000000000000000000000000000000015792579257925792579257925792579257925792579257925792579257925792"`,
     )
   })
 
@@ -732,4 +733,237 @@ test('args: dataSuffix', async () => {
       ],
     ]
   `)
+})
+
+describe('behavior: client dataSuffix', () => {
+  const getClientWithDataSuffix = <
+    chain extends Chain | undefined = undefined,
+  >({
+    chain,
+    dataSuffix,
+    onRequest,
+  }: {
+    chain?: chain | undefined
+    dataSuffix:
+      | `0x${string}`
+      | { value: `0x${string}`; required?: boolean | undefined }
+    onRequest({ method, params }: any): void
+  }) =>
+    createWalletClient({
+      chain,
+      dataSuffix,
+      transport: custom({
+        async request({ method, params }) {
+          onRequest({ method, params })
+          if (method === 'wallet_sendCalls') {
+            return uid()
+          }
+          return null
+        },
+      }),
+    })
+
+  test('applies client dataSuffix as optional capability (hex string)', async () => {
+    const requests: unknown[] = []
+
+    const client = getClientWithDataSuffix({
+      dataSuffix: '0x12345678',
+      onRequest({ params }) {
+        requests.push(params)
+      },
+    })
+
+    const response = await sendCalls(client, {
+      account: accounts[0].address,
+      chain: mainnet,
+      calls: [
+        {
+          to: accounts[1].address,
+          value: parseEther('1'),
+        },
+      ],
+    })
+
+    expect(response.id).toBeDefined()
+    expect(requests).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "atomicRequired": false,
+            "calls": [
+              {
+                "data": undefined,
+                "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+                "value": "0xde0b6b3a7640000",
+              },
+            ],
+            "capabilities": {
+              "dataSuffix": {
+                "optional": true,
+                "value": "0x12345678",
+              },
+            },
+            "chainId": "0x1",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "id": undefined,
+            "version": "2.0.0",
+          },
+        ],
+      ]
+    `)
+  })
+
+  test('applies client dataSuffix as required capability (object format)', async () => {
+    const requests: unknown[] = []
+
+    const client = getClientWithDataSuffix({
+      dataSuffix: { value: '0x12345678', required: true },
+      onRequest({ params }) {
+        requests.push(params)
+      },
+    })
+
+    const response = await sendCalls(client, {
+      account: accounts[0].address,
+      chain: mainnet,
+      calls: [
+        {
+          to: accounts[1].address,
+          value: parseEther('1'),
+        },
+      ],
+    })
+
+    expect(response.id).toBeDefined()
+    expect(requests).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "atomicRequired": false,
+            "calls": [
+              {
+                "data": undefined,
+                "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+                "value": "0xde0b6b3a7640000",
+              },
+            ],
+            "capabilities": {
+              "dataSuffix": {
+                "value": "0x12345678",
+              },
+            },
+            "chainId": "0x1",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "id": undefined,
+            "version": "2.0.0",
+          },
+        ],
+      ]
+    `)
+  })
+
+  test('action capabilities.dataSuffix overrides client dataSuffix', async () => {
+    const requests: unknown[] = []
+
+    const client = getClientWithDataSuffix({
+      dataSuffix: '0xclientdata',
+      onRequest({ params }) {
+        requests.push(params)
+      },
+    })
+
+    const response = await sendCalls(client, {
+      account: accounts[0].address,
+      chain: mainnet,
+      capabilities: {
+        dataSuffix: {
+          value: '0xactiondata',
+        },
+      },
+      calls: [
+        {
+          to: accounts[1].address,
+          value: parseEther('1'),
+        },
+      ],
+    })
+
+    expect(response.id).toBeDefined()
+    expect(requests).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "atomicRequired": false,
+            "calls": [
+              {
+                "data": undefined,
+                "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+                "value": "0xde0b6b3a7640000",
+              },
+            ],
+            "capabilities": {
+              "dataSuffix": {
+                "value": "0xactiondata",
+              },
+            },
+            "chainId": "0x1",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "id": undefined,
+            "version": "2.0.0",
+          },
+        ],
+      ]
+    `)
+  })
+
+  test('applies client dataSuffix via decorated method (client.sendCalls)', async () => {
+    const requests: unknown[] = []
+
+    const client = getClientWithDataSuffix({
+      dataSuffix: '0x12345678',
+      onRequest({ params }) {
+        requests.push(params)
+      },
+    })
+
+    // Use the decorated method (client.sendCalls) instead of direct function call
+    const response = await client.sendCalls({
+      account: accounts[0].address,
+      chain: mainnet,
+      calls: [
+        {
+          to: accounts[1].address,
+          value: parseEther('1'),
+        },
+      ],
+    })
+
+    expect(response.id).toBeDefined()
+    expect(requests).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "atomicRequired": false,
+            "calls": [
+              {
+                "data": undefined,
+                "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+                "value": "0xde0b6b3a7640000",
+              },
+            ],
+            "capabilities": {
+              "dataSuffix": {
+                "optional": true,
+                "value": "0x12345678",
+              },
+            },
+            "chainId": "0x1",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "id": undefined,
+            "version": "2.0.0",
+          },
+        ],
+      ]
+    `)
+  })
 })

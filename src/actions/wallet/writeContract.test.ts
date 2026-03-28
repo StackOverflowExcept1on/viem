@@ -1,10 +1,10 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { Delegation, ErrorsExample, Payable } from '~contracts/generated.js'
-import { wagmiContractConfig } from '~test/src/abis.js'
-import { accounts } from '~test/src/constants.js'
-import { deploy, deployErrorExample, deployPayable } from '~test/src/utils.js'
-import { anvilMainnet } from '../../../test/src/anvil.js'
+import { wagmiContractConfig } from '~test/abis.js'
+import { anvilMainnet } from '~test/anvil.js'
+import { accounts } from '~test/constants.js'
+import { deploy, deployErrorExample, deployPayable } from '~test/utils.js'
 import { generatePrivateKey } from '../../accounts/generatePrivateKey.js'
 import { privateKeyToAccount } from '../../accounts/privateKeyToAccount.js'
 import { optimism } from '../../chains/index.js'
@@ -297,12 +297,14 @@ test('args: dataSuffix', async () => {
     functionName: 'mint',
     dataSuffix: '0x12345678',
   })
+  // writeContract passes dataSuffix to sendTransaction, which handles concatenation
   expect(spy).toHaveBeenCalledWith({
     account: {
       address: accounts[0].address,
       type: 'json-rpc',
     },
-    data: '0x1249c58b12345678',
+    data: '0x1249c58b',
+    dataSuffix: '0x12345678',
     to: wagmiContractConfig.address,
   })
 })
@@ -386,6 +388,7 @@ test('w/ simulateContract (overloaded)', async () => {
       sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
     Docs: https://viem.sh/docs/contract/simulateContract
+    Details: execution reverted: Token ID is taken
     Version: viem@x.y.z]
   `)
 })
@@ -504,6 +507,7 @@ describe('behavior: contract revert', () => {
         sender:    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
       Docs: https://viem.sh/docs/contract/writeContract
+      Details: execution reverted: This is a revert message
       Version: viem@x.y.z]
     `)
   })
@@ -528,6 +532,7 @@ describe('behavior: contract revert', () => {
         sender:    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
       Docs: https://viem.sh/docs/contract/writeContract
+      Details: execution reverted: panic: assertion failed (0x01)
       Version: viem@x.y.z]
     `)
   })
@@ -552,6 +557,7 @@ describe('behavior: contract revert', () => {
         sender:    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
       Docs: https://viem.sh/docs/contract/writeContract
+      Details: execution reverted: panic: arithmetic underflow or overflow (0x11)
       Version: viem@x.y.z]
     `)
   })
@@ -576,6 +582,7 @@ describe('behavior: contract revert', () => {
         sender:    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
       Docs: https://viem.sh/docs/contract/writeContract
+      Details: execution reverted: panic: division or modulo by zero (0x12)
       Version: viem@x.y.z]
     `)
   })
@@ -599,6 +606,7 @@ describe('behavior: contract revert', () => {
         sender:    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
       Docs: https://viem.sh/docs/contract/writeContract
+      Details: execution reverted
       Version: viem@x.y.z]
     `)
   })
@@ -625,6 +633,7 @@ describe('behavior: contract revert', () => {
         sender:    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
       Docs: https://viem.sh/docs/contract/writeContract
+      Details: execution reverted: custom error 0xf9006398:                                                                bugger                          
       Version: viem@x.y.z]
     `)
   })
@@ -651,6 +660,7 @@ describe('behavior: contract revert', () => {
         sender:    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
       Docs: https://viem.sh/docs/contract/writeContract
+      Details: execution reverted: custom error 0xdb731cf4: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000004500000000000000000000000000000000000000000000000000000000000000066275676765720000000000000000000000000000000000000000000000000000
       Version: viem@x.y.z]
     `)
   })

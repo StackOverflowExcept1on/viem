@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { blobData, kzg } from '../../../test/src/kzg.js'
+import { blobData, kzg } from '~test/kzg.js'
 import type { Kzg } from '../../types/kzg.js'
 import type { ByteArray } from '../../types/misc.js'
 import { stringToBytes, stringToHex } from '../index.js'

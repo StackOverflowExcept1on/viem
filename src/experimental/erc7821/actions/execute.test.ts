@@ -1,12 +1,12 @@
 import { expect, test } from 'vitest'
+import { wagmiContractConfig } from '~test/abis.js'
+import { anvilMainnet } from '~test/anvil.js'
+import { accounts } from '~test/constants.js'
+import { deploy, deployErrorExample } from '~test/utils.js'
 import {
   ERC7821Example,
   ErrorsExample,
 } from '../../../../contracts/generated.js'
-import { wagmiContractConfig } from '../../../../test/src/abis.js'
-import { anvilMainnet } from '../../../../test/src/anvil.js'
-import { accounts } from '../../../../test/src/constants.js'
-import { deploy, deployErrorExample } from '../../../../test/src/utils.js'
 import { privateKeyToAccount } from '../../../accounts/privateKeyToAccount.js'
 import {
   getBalance,
@@ -213,6 +213,7 @@ test('behavior: revert', async () => {
       address:   0x0000000000000000000000000000000000000000
       function:  complexCustomWrite()
 
+    Details: execution reverted: custom error 0xdb731cf4: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000004500000000000000000000000000000000000000000000000000000000000000066275676765720000000000000000000000000000000000000000000000000000
     Version: viem@x.y.z]
   `)
 })

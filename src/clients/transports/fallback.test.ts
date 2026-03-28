@@ -1,12 +1,13 @@
 import { assertType, describe, expect, test } from 'vitest'
 
-import { createHttpServer } from '~test/src/utils.js'
+import { createHttpServer } from '~test/utils.js'
 import { getBlockNumber } from '../../actions/public/getBlockNumber.js'
 import { localhost } from '../../chains/index.js'
 import {
   InternalRpcError,
   MethodNotSupportedRpcError,
   UserRejectedRequestError,
+  WalletConnectSessionSettlementError,
 } from '../../errors/rpc.js'
 import { wait } from '../../utils/wait.js'
 import { createClient } from '../createClient.js'
@@ -351,6 +352,50 @@ describe('request', () => {
     expect(count).toBe(1)
   })
 
+  test('error (rpc - WalletConnectSessionSettlementError)', async () => {
+    let count = 0
+    const server1 = await createHttpServer((_req, res) => {
+      count++
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+      })
+      res.end(
+        JSON.stringify({
+          error: {
+            code: WalletConnectSessionSettlementError.code,
+            message: 'Session settlement failed.',
+          },
+        }),
+      )
+    })
+    const server2 = await createHttpServer((_req, res) => {
+      count++
+      res.writeHead(500)
+      res.end()
+    })
+    const server3 = await createHttpServer((_req, res) => {
+      count++
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+      })
+      res.end(JSON.stringify({ result: '0x1' }))
+    })
+
+    const transport = fallback([
+      http(server1.url),
+      http(server2.url),
+      http(server3.url),
+    ])({
+      chain: localhost,
+    })
+    await expect(() =>
+      transport.request({ method: 'eth_blockNumber' }),
+    ).rejects.toThrowError()
+
+    // Should not fallthrough to other transports
+    expect(count).toBe(1)
+  })
+
   test('error (rpc - fallthrough)', async () => {
     let count = 0
     const server1 = await createHttpServer((_req, res) => {
@@ -644,6 +689,7 @@ describe('client', () => {
         "cacheTime": 4000,
         "ccipRead": undefined,
         "chain": undefined,
+        "dataSuffix": undefined,
         "extend": [Function],
         "key": "base",
         "name": "Base Client",

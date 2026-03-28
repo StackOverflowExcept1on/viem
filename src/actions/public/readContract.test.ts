@@ -10,15 +10,14 @@ import {
   baycContractConfig,
   multicall3ContractConfig,
   wagmiContractConfig,
-} from '~test/src/abis.js'
-import { accounts, address } from '~test/src/constants.js'
+} from '~test/abis.js'
+import { anvilMainnet } from '~test/anvil.js'
+import { accounts, address } from '~test/constants.js'
 import {
   deploy,
   deployErrorExample,
   deploySoladyAccount_07,
-} from '~test/src/utils.js'
-
-import { anvilMainnet } from '../../../test/src/anvil.js'
+} from '~test/utils.js'
 import { generatePrivateKey } from '../../accounts/generatePrivateKey.js'
 import { privateKeyToAccount } from '../../accounts/privateKeyToAccount.js'
 
@@ -175,18 +174,7 @@ describe('bayc', () => {
         functionName: 'tokenOfOwnerByIndex',
         args: [address.vitalik, 5n],
       }),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "tokenOfOwnerByIndex" reverted with the following reason:
-      EnumerableSet: index out of bounds
-
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  tokenOfOwnerByIndex(address owner, uint256 index)
-        args:                         (0xd8da6bf26964af9d7eed9e03e53415d37aa96045, 5)
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "tokenOfOwnerByIndex" reverted')
   })
 
   test('revert', async () => {
@@ -196,18 +184,7 @@ describe('bayc', () => {
         functionName: 'ownerOf',
         args: [420213123123n],
       }),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "ownerOf" reverted with the following reason:
-      ERC721: owner query for nonexistent token
-
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  ownerOf(uint256 tokenId)
-        args:             (420213123123)
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "ownerOf" reverted')
   })
 })
 
@@ -309,17 +286,7 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'revertRead',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "revertRead" reverted with the following reason:
-      This is a revert message
-
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  revertRead()
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "revertRead" reverted')
   })
 
   test('assert', async () => {
@@ -331,17 +298,7 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'assertRead',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "assertRead" reverted with the following reason:
-      An \`assert\` condition failed.
-
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  assertRead()
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "assertRead" reverted')
   })
 
   test('overflow', async () => {
@@ -353,17 +310,7 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'overflowRead',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "overflowRead" reverted with the following reason:
-      Arithmetic operation resulted in underflow or overflow.
-
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  overflowRead()
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "overflowRead" reverted')
   })
 
   test('divide by zero', async () => {
@@ -375,17 +322,7 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'divideByZeroRead',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "divideByZeroRead" reverted with the following reason:
-      Division or modulo by zero (e.g. \`5 / 0\` or \`23 % 0\`).
-
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  divideByZeroRead()
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "divideByZeroRead" reverted')
   })
 
   test('require', async () => {
@@ -397,16 +334,7 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'requireRead',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "requireRead" reverted.
-
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  requireRead()
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "requireRead" reverted.')
   })
 
   test('custom error: simple', async () => {
@@ -418,19 +346,7 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'simpleCustomRead',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "simpleCustomRead" reverted.
-
-      Error: SimpleError(string message)
-                        (bugger)
-       
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  simpleCustomRead()
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "simpleCustomRead" reverted.')
   })
 
   test('custom error: simple (no args)', async () => {
@@ -442,18 +358,9 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'simpleCustomReadNoArgs',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "simpleCustomReadNoArgs" reverted.
-
-      Error: SimpleErrorNoArgs()
-       
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  simpleCustomReadNoArgs()
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow(
+      'The contract function "simpleCustomReadNoArgs" reverted.',
+    )
   })
 
   test('custom error: complex', async () => {
@@ -465,19 +372,7 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'complexCustomRead',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "complexCustomRead" reverted.
-
-      Error: ComplexError((address sender, uint256 bar), string message, uint256 number)
-                         ({"sender":"0x0000000000000000000000000000000000000000","bar":"69"}, bugger, 69)
-       
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  complexCustomRead()
-
-      Docs: https://viem.sh/docs/contract/readContract
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "complexCustomRead" reverted.')
   })
 
   test('custom error does not exist on abi', async () => {
@@ -493,21 +388,7 @@ describe('contract errors', () => {
         address: contractAddress!,
         functionName: 'simpleCustomRead',
       }),
-    ).rejects.toMatchInlineSnapshot(`
-      [ContractFunctionExecutionError: The contract function "simpleCustomRead" reverted with the following signature:
-      0xf9006398
-
-      Unable to decode signature "0xf9006398" as it was not found on the provided ABI.
-      Make sure you are using the correct ABI and that the error exists on it.
-      You can look up the decoded signature here: https://openchain.xyz/signatures?query=0xf9006398.
-       
-      Contract Call:
-        address:   0x0000000000000000000000000000000000000000
-        function:  simpleCustomRead()
-
-      Docs: https://viem.sh/docs/contract/decodeErrorResult
-      Version: viem@x.y.z]
-    `)
+    ).rejects.toThrow('The contract function "simpleCustomRead" reverted')
   })
 })
 

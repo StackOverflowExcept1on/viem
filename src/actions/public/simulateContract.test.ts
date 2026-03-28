@@ -10,20 +10,20 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { Delegation, ErrorsExample } from '~contracts/generated.js'
-import { baycContractConfig, wagmiContractConfig } from '~test/src/abis.js'
-import { accounts } from '~test/src/constants.js'
+import { baycContractConfig, wagmiContractConfig } from '~test/abis.js'
+import { anvilMainnet } from '~test/anvil.js'
+import { accounts } from '~test/constants.js'
 import {
   deploy,
   deployBAYC,
   deployErrorExample,
   mainnetClient,
-} from '~test/src/utils.js'
-import { maxUint256 } from '~viem/constants/number.js'
-import { anvilMainnet } from '../../../test/src/anvil.js'
+} from '~test/utils.js'
 import { generatePrivateKey } from '../../accounts/generatePrivateKey.js'
 import { privateKeyToAccount } from '../../accounts/privateKeyToAccount.js'
 import { publicActions } from '../../clients/decorators/public.js'
 import { walletActions } from '../../clients/decorators/wallet.js'
+import { maxUint256 } from '../../constants/number.js'
 import { parseEther } from '../../utils/unit/parseEther.js'
 import { parseGwei } from '../../utils/unit/parseGwei.js'
 import { mine } from '../test/mine.js'
@@ -104,6 +104,7 @@ describe('wagmi', () => {
         args:          (13371337)
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: ERC721: mint to the zero address
       Version: viem@x.y.z]
     `)
   })
@@ -127,6 +128,7 @@ describe('wagmi', () => {
         sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: ERC721: approval to current owner
       Version: viem@x.y.z]
     `)
     await expect(() =>
@@ -147,6 +149,7 @@ describe('wagmi', () => {
         sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: Token ID is taken
       Version: viem@x.y.z]
     `)
     await expect(() =>
@@ -171,6 +174,7 @@ describe('wagmi', () => {
         sender:    0xa5cc3c03994DB5b0d9A5eEdD10CabaB0813678AC
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: ERC721: transfer caller is not owner nor approved
       Version: viem@x.y.z]
     `)
   })
@@ -272,6 +276,7 @@ describe('BAYC', () => {
           args:             (1)
 
         Docs: https://viem.sh/docs/contract/simulateContract
+        Details: execution reverted: ERC721: mint to the zero address
         Version: viem@x.y.z]
       `)
     })
@@ -328,6 +333,7 @@ describe('BAYC', () => {
           sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
         Docs: https://viem.sh/docs/contract/simulateContract
+        Details: execution reverted: Sale must be active to mint Ape
         Version: viem@x.y.z]
       `)
     })
@@ -371,17 +377,18 @@ describe('contract errors', () => {
         account: accounts[0].address,
       }),
     ).rejects.toMatchInlineSnapshot(`
-        [ContractFunctionExecutionError: The contract function "revertWrite" reverted with the following reason:
-        This is a revert message
+      [ContractFunctionExecutionError: The contract function "revertWrite" reverted with the following reason:
+      This is a revert message
 
-        Contract Call:
-          address:   0x0000000000000000000000000000000000000000
-          function:  revertWrite()
-          sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+      Contract Call:
+        address:   0x0000000000000000000000000000000000000000
+        function:  revertWrite()
+        sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
-        Docs: https://viem.sh/docs/contract/simulateContract
-        Version: viem@x.y.z]
-      `)
+      Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: This is a revert message
+      Version: viem@x.y.z]
+    `)
   })
 
   test('assert', async () => {
@@ -395,17 +402,18 @@ describe('contract errors', () => {
         account: accounts[0].address,
       }),
     ).rejects.toMatchInlineSnapshot(`
-        [ContractFunctionExecutionError: The contract function "assertWrite" reverted with the following reason:
-        An \`assert\` condition failed.
+      [ContractFunctionExecutionError: The contract function "assertWrite" reverted with the following reason:
+      An \`assert\` condition failed.
 
-        Contract Call:
-          address:   0x0000000000000000000000000000000000000000
-          function:  assertWrite()
-          sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+      Contract Call:
+        address:   0x0000000000000000000000000000000000000000
+        function:  assertWrite()
+        sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
-        Docs: https://viem.sh/docs/contract/simulateContract
-        Version: viem@x.y.z]
-      `)
+      Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: panic: assertion failed (0x01)
+      Version: viem@x.y.z]
+    `)
   })
 
   test('overflow', async () => {
@@ -428,6 +436,7 @@ describe('contract errors', () => {
         sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: panic: arithmetic underflow or overflow (0x11)
       Version: viem@x.y.z]
     `)
   })
@@ -452,6 +461,7 @@ describe('contract errors', () => {
         sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: panic: division or modulo by zero (0x12)
       Version: viem@x.y.z]
     `)
   })
@@ -475,6 +485,7 @@ describe('contract errors', () => {
         sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted
       Version: viem@x.y.z]
     `)
   })
@@ -501,6 +512,7 @@ describe('contract errors', () => {
         sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: custom error 0xf9006398:                                                                bugger                          
       Version: viem@x.y.z]
     `)
   })
@@ -527,6 +539,7 @@ describe('contract errors', () => {
         sender:    0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
       Docs: https://viem.sh/docs/contract/simulateContract
+      Details: execution reverted: custom error 0xdb731cf4: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000004500000000000000000000000000000000000000000000000000000000000000066275676765720000000000000000000000000000000000000000000000000000
       Version: viem@x.y.z]
     `)
   })
@@ -787,5 +800,77 @@ describe('node errors', () => {
       Docs: https://viem.sh/docs/contract/simulateContract
       Version: viem@x.y.z]
     `)
+  })
+})
+
+describe('behavior: client dataSuffix', () => {
+  test('applies client dataSuffix (hex string)', async () => {
+    const clientWithSuffix = Object.assign(
+      anvilMainnet.getClient().extend(publicActions),
+      { dataSuffix: '0x12345678' as const },
+    )
+    const spy = vi.spyOn(clientWithSuffix, 'call')
+
+    const { request } = await simulateContract(clientWithSuffix, {
+      abi: wagmiContractConfig.abi,
+      address: wagmiContractConfig.address,
+      account: accounts[0].address,
+      functionName: 'mint',
+    })
+
+    expect(spy).toHaveBeenCalledWith({
+      account: request.account,
+      batch: false,
+      data: '0x1249c58b12345678',
+      to: wagmiContractConfig.address,
+    })
+    expect(request.dataSuffix).toEqual('0x12345678')
+  })
+
+  test('applies client dataSuffix (object format)', async () => {
+    const clientWithSuffix = Object.assign(
+      anvilMainnet.getClient().extend(publicActions),
+      { dataSuffix: { value: '0x12345678' as const, required: true } },
+    )
+    const spy = vi.spyOn(clientWithSuffix, 'call')
+
+    const { request } = await simulateContract(clientWithSuffix, {
+      abi: wagmiContractConfig.abi,
+      address: wagmiContractConfig.address,
+      account: accounts[0].address,
+      functionName: 'mint',
+    })
+
+    expect(spy).toHaveBeenCalledWith({
+      account: request.account,
+      batch: false,
+      data: '0x1249c58b12345678',
+      to: wagmiContractConfig.address,
+    })
+    expect(request.dataSuffix).toEqual('0x12345678')
+  })
+
+  test('parameter dataSuffix takes precedence over client dataSuffix', async () => {
+    const clientWithSuffix = Object.assign(
+      anvilMainnet.getClient().extend(publicActions),
+      { dataSuffix: '0xaabbccdd' as const },
+    )
+    const spy = vi.spyOn(clientWithSuffix, 'call')
+
+    const { request } = await simulateContract(clientWithSuffix, {
+      abi: wagmiContractConfig.abi,
+      address: wagmiContractConfig.address,
+      account: accounts[0].address,
+      functionName: 'mint',
+      dataSuffix: '0x12345678',
+    })
+
+    expect(spy).toHaveBeenCalledWith({
+      account: request.account,
+      batch: false,
+      data: '0x1249c58b12345678',
+      to: wagmiContractConfig.address,
+    })
+    expect(request.dataSuffix).toEqual('0x12345678')
   })
 })

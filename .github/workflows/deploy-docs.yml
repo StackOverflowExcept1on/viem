@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     permissions:
       contents: read
     
@@ -19,6 +19,12 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
 
+      - name: Restore Vocs cache
+        uses: actions/cache/restore@v4
+        with:
+          path: site/.cache
+          key: vocs
+
       - name: Build package
         run: pnpm build
 
@@ -26,11 +32,16 @@ jobs:
         run: pnpm docs:build
 
       - name: Deploy
-        uses: amondnet/vercel-action@v41.1.4
+        run: npx vercel deploy . --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./site
+
+      - name: Ensure cache dir exists
+        if: always()
+        run: mkdir -p site/.cache
+      
+      - name: Save Vocs cache
+        if: always()
+        uses: actions/cache/save@v4
         with:
-          scope: wevm
-          vercel-args: --prod
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          working-directory: ./site/dist
+          path: site/.cache
+          key: vocs

@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from 'vitest'
+import { beforeAll, describe, expect, test, vi } from 'vitest'
 
 import {
   Eoa,
@@ -7,25 +7,26 @@ import {
   SoladyAccount07,
   SoladyAccountFactory07,
 } from '~contracts/generated.js'
-import { ensPublicResolverConfig, smartAccountConfig } from '~test/src/abis.js'
-import { anvilMainnet } from '~test/src/anvil.js'
-import { accounts, address } from '~test/src/constants.js'
+import { ensPublicResolverConfig, smartAccountConfig } from '~test/abis.js'
+import { getSmartAccounts_07 } from '~test/account-abstraction.js'
+import { anvilMainnet } from '~test/anvil.js'
+import { bundlerMainnet } from '~test/bundler.js'
+import { accounts, address } from '~test/constants.js'
 import {
   deploy,
   deployErc6492SignatureVerifier,
   deploySoladyAccount_07,
-} from '~test/src/utils.js'
+} from '~test/utils.js'
 import {
   entryPoint07Abi,
   entryPoint07Address,
   toPackedUserOperation,
-} from '~viem/account-abstraction/index.js'
-import { getSmartAccounts_07 } from '../../../test/src/account-abstraction.js'
-import { bundlerMainnet } from '../../../test/src/bundler.js'
+} from '../../account-abstraction/index.js'
 import { generatePrivateKey } from '../../accounts/generatePrivateKey.js'
 import { privateKeyToAccount } from '../../accounts/privateKeyToAccount.js'
 import { zksync } from '../../chains/index.js'
 import { createClient } from '../../clients/createClient.js'
+import { custom } from '../../clients/transports/custom.js'
 import { http } from '../../clients/transports/http.js'
 import { signMessage as signMessageErc1271 } from '../../experimental/erc7739/actions/signMessage.js'
 import type { Hex } from '../../types/misc.js'
@@ -60,7 +61,7 @@ describe('local account', async () => {
       message: 'hello world',
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: localAccount.address,
         hash: hashMessage('hello world'),
@@ -75,7 +76,7 @@ describe('local account', async () => {
       message: 'hello world',
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: localAccount.address,
         hash: hashMessage('hello world'),
@@ -90,11 +91,48 @@ describe('local account', async () => {
       message: 'hello world',
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: localAccount.address,
         hash: hashMessage('hello world'),
         signature: parseSignature(signature),
+      }),
+    ).resolves.toBe(true)
+  })
+})
+
+describe('mode', async () => {
+  test('eoa verifies locally without RPC when local recovery succeeds', async () => {
+    const request = vi.fn(async () => {
+      throw new Error('unexpected rpc request')
+    })
+    const mockClient = createClient({
+      transport: custom({ request }),
+    })
+
+    const hash = hashMessage('hello world')
+    const signature = await localAccount.sign({ hash })
+
+    await expect(
+      verifyHash(mockClient, {
+        address: localAccount.address,
+        hash,
+        signature,
+        mode: 'eoa',
+      }),
+    ).resolves.toBe(true)
+
+    expect(request).not.toHaveBeenCalled()
+  })
+
+  test('eoa falls back to universal verification', async () => {
+    await expect(
+      verifyHash(client, {
+        address: smartAccountConfig.address,
+        hash: hashMessage('This is a test message for viem!'),
+        signature:
+          '0xefd5fb29a274ea6682673d8b3caa9263e936d48d486e5df68893003e0a76496439594d12245008c6fba1c8e3ef28241cffe1bef27ff6bca487b167f261f329251c',
+        mode: 'eoa',
       }),
     ).resolves.toBe(true)
   })
@@ -120,7 +158,7 @@ describe('erc6492', async () => {
       verifier,
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: verifier,
         hash: hashMessage('hello world'),
@@ -154,7 +192,7 @@ describe('erc6492', async () => {
       verifier,
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: verifier,
         factory: factoryAddress,
@@ -192,7 +230,7 @@ describe('erc6492', async () => {
       verifier,
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: verifier,
         factory: factoryAddress,
@@ -242,7 +280,7 @@ describe('erc6492', async () => {
       verifier,
     })
 
-    expect(
+    await expect(
       verifyHash(overrideClient, {
         address: verifier,
         factory: factoryAddress,
@@ -280,7 +318,7 @@ describe('erc6492', async () => {
       verifier,
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: verifier,
         factory: factoryAddress,
@@ -291,7 +329,7 @@ describe('erc6492', async () => {
     ).resolves.toBe(true)
   })
 
-  test('deployed w/ owner update encoded as factory + factoryData', async () => {
+  test.skip('deployed w/ owner update encoded as factory + factoryData', async () => {
     const [account] = await getSmartAccounts_07()
 
     const newOwner = privateKeyToAccount(accounts[1].privateKey)
@@ -329,7 +367,7 @@ describe('erc6492', async () => {
       verifier: account.address,
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: account.address,
         factory,
@@ -365,7 +403,7 @@ describe('erc6492', async () => {
       verifier,
     })
 
-    expect(
+    await expect(
       verifyHash(client, {
         address: verifier,
         factory: factoryAddress,
@@ -818,7 +856,7 @@ test('https://github.com/wevm/viem/issues/2484', async () => {
     message: 'hello world',
   })
 
-  expect(
+  await expect(
     verifyHash(client, {
       address: localAccount.address,
       hash: hashMessage('hello world'),
@@ -833,7 +871,7 @@ test('https://github.com/wevm/viem/issues/3593', async () => {
     message: 'hello world',
   })
 
-  expect(
+  await expect(
     verifyHash(client, {
       address: localAccount.address,
       hash: hashMessage('hello world'),

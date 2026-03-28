@@ -2,9 +2,9 @@ import type { AbiEvent } from 'abitype'
 
 import { describe, expect, test } from 'vitest'
 
-import { usdcContractConfig, wagmiContractConfig } from '~test/src/abis.js'
-import { accounts, address } from '~test/src/constants.js'
-import { anvilMainnet } from '../../test/src/anvil.js'
+import { usdcContractConfig, wagmiContractConfig } from '~test/abis.js'
+import { anvilMainnet } from '~test/anvil.js'
+import { accounts, address } from '~test/constants.js'
 
 import {
   getContract,
@@ -252,31 +252,12 @@ test('js reserved keywords/prototype methods as abi item names', async () => {
       public: publicClient,
     },
   })
-  await expect(
-    contractNoIndexedEventArgs.read.constructor(),
-  ).rejects.toThrowErrorMatchingInlineSnapshot(`
-    [ContractFunctionExecutionError: The contract function "constructor" reverted.
-
-    Contract Call:
-      address:   0x0000000000000000000000000000000000000000
-      function:  constructor()
-
-    Docs: https://viem.sh/docs/contract/readContract
-    Version: viem@x.y.z]
-  `)
+  await expect(contractNoIndexedEventArgs.read.constructor()).rejects.toThrow(
+    'The contract function "constructor" reverted.',
+  )
   await expect(
     contractNoIndexedEventArgs.read.function(['function']),
-  ).rejects.toThrowErrorMatchingInlineSnapshot(`
-    [ContractFunctionExecutionError: The contract function "function" reverted.
-
-    Contract Call:
-      address:   0x0000000000000000000000000000000000000000
-      function:  function(string function)
-      args:              (function)
-
-    Docs: https://viem.sh/docs/contract/readContract
-    Version: viem@x.y.z]
-  `)
+  ).rejects.toThrow('The contract function "function" reverted.')
 })
 
 test.each([

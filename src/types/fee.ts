@@ -8,6 +8,8 @@ export type FeeHistory<quantity = bigint> = {
   baseFeePerGas: quantity[]
   /** An array of block gas used ratios. These are calculated as the ratio of gasUsed and gasLimit. */
   gasUsedRatio: number[]
+  baseFeePerBlobGas?: quantity[]
+  blobGasUsedRatio?: number[]
   /** Lowest number block of the returned range. */
   oldestBlock: quantity
   /** An array of effective priority fees (in wei) per gas data points from a single block. All zeroes are returned if the block is empty. */

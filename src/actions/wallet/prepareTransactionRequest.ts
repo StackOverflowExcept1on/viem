@@ -31,6 +31,7 @@ import {
 } from '../../errors/fee.js'
 import type { DeriveAccount, GetAccountParameter } from '../../types/account.js'
 import type { Block } from '../../types/block.js'
+import type { ExtractCapabilities } from '../../types/capabilities.js'
 import type {
   Chain,
   DeriveChain,
@@ -191,7 +192,12 @@ export type PrepareTransactionRequestReturnType<
         : (typeof defaultParameters)[number]
     >
   > &
-    (unknown extends request['kzg'] ? {} : Pick<request, 'kzg'>)
+    (unknown extends request['kzg'] ? {} : Pick<request, 'kzg'>) & {
+      // TODO(v3): Extract `prepareTransactionRequest` response into a named object of `{ capabilities, request }.
+      _capabilities?:
+        | ExtractCapabilities<'fillTransaction', 'ReturnType'>
+        | undefined
+    }
 >
 
 export type PrepareTransactionRequestErrorType =
@@ -415,6 +421,26 @@ export async function prepareTransactionRequest<
             ...('nonceKey' in rest && typeof rest.nonceKey !== 'undefined'
               ? { nonceKey: rest.nonceKey }
               : {}),
+            ...('keyAuthorization' in rest &&
+            typeof rest.keyAuthorization !== 'undefined' &&
+            rest.keyAuthorization !== null &&
+            !('keyAuthorization' in request)
+              ? { keyAuthorization: rest.keyAuthorization }
+              : {}),
+            ...('feePayerSignature' in rest &&
+            typeof rest.feePayerSignature !== 'undefined' &&
+            rest.feePayerSignature !== null
+              ? { feePayerSignature: rest.feePayerSignature }
+              : {}),
+            ...('feeToken' in rest &&
+            typeof rest.feeToken !== 'undefined' &&
+            rest.feeToken !== null &&
+            !('feeToken' in request)
+              ? { feeToken: rest.feeToken }
+              : {}),
+            ...(result.capabilities
+              ? { _capabilities: result.capabilities }
+              : {}),
           }
         })
         .catch((e) => {
@@ -447,7 +473,7 @@ export async function prepareTransactionRequest<
   request = {
     ...(fillResult as any),
     ...(account ? { from: account?.address } : {}),
-    ...(nonce ? { nonce } : {}),
+    ...(typeof nonce !== 'undefined' ? { nonce } : {}),
   }
   const { blobs, gas, kzg, type } = request
 

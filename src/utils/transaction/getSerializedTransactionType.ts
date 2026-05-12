@@ -37,12 +37,11 @@ export type GetSerializedTransactionType<
     | (serializedTransaction extends TransactionSerializedLegacy
         ? 'legacy'
         : never),
-> =
-  IsNarrowable<serializedTransaction, Hex> extends true
-    ? IsNever<result> extends false
-      ? result
-      : 'legacy'
-    : TransactionType
+> = IsNarrowable<serializedTransaction, Hex> extends true
+  ? IsNever<result> extends false
+    ? result
+    : 'legacy'
+  : TransactionType
 
 export type GetSerializedTransactionTypeErrorType =
   | HexToNumberErrorType
